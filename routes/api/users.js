@@ -26,7 +26,7 @@ router.get("/test", (req, res) =>
 // @desc        Register user
 // @access      Public
 router.post("/register", (req, res) => {
-    const { errors, isValid } = validateRegisterInput(req.body);
+    const {errors, isValid} = validateRegisterInput(req.body);
 
     // Check basic data validation
     if (!isValid) {
@@ -34,7 +34,7 @@ router.post("/register", (req, res) => {
     }
 
     // Check user existence in data base
-    User.findOne({ email: req.body.email }).then(user => {
+    User.findOne({email: req.body.email}).then(user => {
         if (user) {
             errors.email = "Email already exists";
             return res.status(400).json(errors);
@@ -71,16 +71,24 @@ router.post("/register", (req, res) => {
 // @desc        Login user and return JWT Token
 // @access      Public
 router.post("/login", (req, res) => {
-   const email = req.body.email;
-   const password = req.body.password;
-   console.log(email, password);
+    const { errors, isValid } = validateLoginInput(req.body);
 
-   // Find user by email
-    User.findOne({ email: req.body.email })
+    // Check basic data validation
+    if (!isValid) {
+        return res.status(400).json(errors);
+    }
+
+    const email = req.body.email;
+    const password = req.body.password;
+    console.log(email, password);
+
+    // Find user by email
+    User.findOne({email: req.body.email})
         .then(user => {
             console.log(user);
             if (!user) {
-                return res.status(404).json({email: "User not found"});
+                errors.email = "User not found";
+                return res.status(404).json(errors);
             }
 
             // check password
@@ -89,24 +97,25 @@ router.post("/login", (req, res) => {
                     if (isMatch) {
                         // User Matched. Create JWT payload
                         const payload = {
-                          id: user.id,
-                          name: user.name,
-                          avatar: user.avatar
+                            id: user.id,
+                            name: user.name,
+                            avatar: user.avatar
                         };
 
                         // Sign JWT
                         jwt.sign(
                             payload,
                             keys.secretOrKey,
-                            { expiresIn: 3600},
+                            {expiresIn: 3600},
                             (err, token) => {
                                 res.json({
                                     success: true,
                                     token: "Bearer " + token
                                 })
-                        });
+                            });
                     } else {
-                        return res.status(400).json({password: "Password incorrect"});
+                        errors.password = "Password incorrect";
+                        return res.status(400).json(errors);
                     }
                 });
         }).catch(err => console.log(err));
@@ -115,14 +124,13 @@ router.post("/login", (req, res) => {
 // @route       POST api/users/current
 // @desc        Return current JWT Token user holder
 // @access      Private
-router.get("/current", passport.authenticate("jwt", { session: false}), (req, res) => {
+router.get("/current", passport.authenticate("jwt", {session: false}), (req, res) => {
     res.json({
         id: req.user.id,
         name: req.user.name,
         email: req.user.email
     });
 });
-
 
 
 module.exports = router;
