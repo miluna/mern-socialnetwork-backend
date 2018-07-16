@@ -26,6 +26,7 @@ router.get("/", passport.authenticate("jwt", {session: false}, (req, res) => {
         const errors = {};
 
         Profile.findOne({user: req.user.id})
+            .populate("user", ["name", "avatar"])
             .then(profile => {
                 if (!profile) {
                     errors.noprofile = "There is no profile for this user";
@@ -40,7 +41,7 @@ router.get("/", passport.authenticate("jwt", {session: false}, (req, res) => {
 // @desc        Create or Update current user profile
 // @access      Private
 router.post("/", passport.authenticate("jwt", {session: false}, (req, res) => {
-        const { errors, isValid } = validateProfileInput(req.body);
+        const {errors, isValid} = validateProfileInput(req.body);
 
         // Check validatoin
         if (!isValid) {
